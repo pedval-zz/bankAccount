@@ -1,7 +1,10 @@
 package com.pedrovalencia.bankAccount.services;
 
+import com.pedrovalencia.bankAccount.utils.AccountUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Optional;
 
@@ -10,6 +13,8 @@ import java.util.Optional;
  * on 23/12/2015.
  */
 public class ATMServiceImpl implements ATMService {
+
+    Logger logger = LoggerFactory.getLogger(ATMServiceImpl.class);
 
     private HashMap<Integer, Integer> notes;
     private AccountService accountService;
@@ -29,14 +34,18 @@ public class ATMServiceImpl implements ATMService {
         notes.put(10, notesOfTen);
         notes.put(20, notesOfTwenty);
         notes.put(50, notesOfFifty);
+
+        logger.debug("Replenish completed.");
     }
 
     @Override
     public String checkBalance(String accountNumber) {
         Optional<BigDecimal> balance = accountService.checkBalance(accountNumber);
         if(balance.isPresent()) {
-            return "Your balance is " + balance.get().setScale(2, RoundingMode.DOWN) + " GBP.";
+            logger.info("Balance for account {} is {}", AccountUtil.maskAccount(accountNumber),balance);
+            return "Your balance is " + AccountUtil.truncateAmount(balance) + " GBP.";
         } else {
+            logger.info("Account {} not found", AccountUtil.maskAccount(accountNumber));
             return "Account not found";
         }
 
@@ -49,6 +58,7 @@ public class ATMServiceImpl implements ATMService {
         if(!accountService.checkBalance(account).isPresent() ||
                 accountService.checkBalance(account).get().compareTo(amount) < 0 ||
                 !amount.divideAndRemainder(new BigDecimal(5))[1].equals( BigDecimal.ZERO)) {
+            logger.info("No withdraw available for account {}",AccountUtil.maskAccount(account));
             return disbursement;
         }
 
@@ -57,6 +67,8 @@ public class ATMServiceImpl implements ATMService {
         //Remove the money from account
         if(disbursed(disbursement)) {
             accountService.withdrawAmount(account, amount);
+            logger.info("New balance for account {} is {}", AccountUtil.maskAccount(account),
+                    accountService.checkBalance(account));
         }
 
         return disbursement;

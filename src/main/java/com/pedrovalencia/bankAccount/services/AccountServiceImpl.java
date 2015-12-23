@@ -1,5 +1,9 @@
 package com.pedrovalencia.bankAccount.services;
 
+import com.pedrovalencia.bankAccount.utils.AccountUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +14,9 @@ import java.util.Optional;
  * on 23/12/2015.
  */
 public class AccountServiceImpl implements AccountService {
+
+    Logger logger = LoggerFactory.getLogger(AccountServiceImpl.class);
+
 
     private HashMap<String, BigDecimal> accounts;
 
@@ -48,9 +55,11 @@ public class AccountServiceImpl implements AccountService {
         //We can't do in a functional way because we're modifying member class (side-effect)
         if(balance.isPresent() && hasEnoughMoney(balance, amount)) {
             this.accounts.put(accountNumber,this.accounts.get(accountNumber).subtract(amount));
+            logger.info("Account:{} disbursed {}", AccountUtil.maskAccount(accountNumber),amount);
             return true;
         }
-
+        logger.info("Account: *****"+ accountNumber.substring(accountNumber.length()-3, accountNumber.length()-1)+
+                " not exist or not enough funds");
         return false;
     }
 
